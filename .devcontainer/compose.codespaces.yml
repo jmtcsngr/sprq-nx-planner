@@ -8,4 +8,7 @@ services:
     command: sleep infinity
     working_dir: /workspace
     volumes:
-      - ..:/workspace:cached
+      # "." is the Compose project dir = the first dockerComposeFile's dir (repo
+      # root), so this mounts the repo root at /workspace. ".." would resolve to
+      # the repo's parent and nest the repo one level too deep.
+      - .:/workspace:cached
