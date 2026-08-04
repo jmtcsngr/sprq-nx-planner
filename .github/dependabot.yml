@@ -1,8 +1,12 @@
 version: 2
+# TEST BRANCH ONLY. target-branch pins every update PR to this branch so a
+# temporary default-branch switch never raises PRs against main. Do not merge
+# this file to main - main keeps the target-branch-free version.
 updates:
   # Frontend JS deps (package.json / package-lock.json)
   - package-ecosystem: "npm"
     directory: "/frontend"
+    target-branch: "test/dependabot-run"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 5
@@ -13,6 +17,7 @@ updates:
   # Backend Python deps (pyproject.toml)
   - package-ecosystem: "pip"
     directory: "/backend"
+    target-branch: "test/dependabot-run"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 5
@@ -26,6 +31,7 @@ updates:
       - "/backend"
       - "/frontend"
       - "/"
+    target-branch: "test/dependabot-run"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 5
