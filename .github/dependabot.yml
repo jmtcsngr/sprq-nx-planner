@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # Frontend JS deps (package.json / package-lock.json)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # Backend Python deps (pyproject.toml)
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    groups:
+      pip-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # Base images in Dockerfiles and docker-compose.yml
+  - package-ecosystem: "docker"
+    directories:
+      - "/backend"
+      - "/frontend"
+      - "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
