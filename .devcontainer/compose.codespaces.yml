@@ -1,0 +1,11 @@
+# Codespaces override, layered on docker-compose.yml.
+# Keeps backend idle so VS Code can attach; source is bind-mounted for hot reload.
+# Start the servers manually (see README "GitHub Codespaces"):
+#   backend:  cd backend && uvicorn app.main:app --reload --port 8000
+#   frontend: cd frontend && npm run dev -- --host
+services:
+  backend:
+    command: sleep infinity
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
