@@ -7,6 +7,10 @@
   // run in the attached container instead, so localhost:8000 resolves.
   "dockerComposeFile": ["../docker-compose.yml", "compose.codespaces.yml"],
   "service": "backend",
+  // Only bring up backend (+ its db dependency). docker-compose.yml also defines
+  // the prod "frontend" nginx on 8080; letting it run shadows the dind prod
+  // stack's 8080 with a frontend whose backend is asleep (sleep infinity) -> 502.
+  "runServices": ["backend", "db"],
   "workspaceFolder": "/workspace",
 
   // Create .env on the host before Compose parses ${POSTGRES_*}. postCreate is
@@ -14,14 +18,20 @@
   "initializeCommand": "cp -n .env.example .env || true",
 
   // Backend image is Python-only; add Node 20 for the frontend toolchain.
+  // docker-in-docker lets us build and run the production docker-compose stack
+  // from inside the Codespace (docker compose up --build -> port 8080).
+  // moby:false installs Docker CE instead of Moby - the backend's python:3.12-slim
+  // is Debian trixie, where the Moby apt packages aren't available.
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": false }
   },
 
-  "forwardPorts": [5173, 8000],
+  "forwardPorts": [5173, 8000, 8080],
   "portsAttributes": {
     "5173": { "label": "Frontend (Vite)", "onAutoForward": "openBrowser" },
-    "8000": { "label": "Backend API", "onAutoForward": "silent" }
+    "8000": { "label": "Backend API", "onAutoForward": "silent" },
+    "8080": { "label": "App (prod containers)", "onAutoForward": "silent" }
   },
 
   // Editable backend install + migrations + frontend deps.
