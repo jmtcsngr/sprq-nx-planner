@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import type { PlateOut, RunOut, StageOut } from "@/types/schedule";
 
-import { findContinuation, isCellOpen } from "./groupCyclesByInstrumentAndDay";
+import {
+  allStages,
+  findContinuation,
+  groupCyclesByInstrumentAndDay,
+  isCellOpen,
+  padStages,
+  resolveCell,
+} from "./groupCyclesByInstrumentAndDay";
 
 function baseStage(overrides: Partial<StageOut> = {}): StageOut {
   return {
@@ -155,5 +162,73 @@ describe("findContinuation", () => {
     const cont = findContinuation(byDate, "2026-07-21");
     expect(cont?.run.run_id).toBe(5);
     expect(cont?.acquiresToday).toBe(true);
+  });
+});
+
+describe("groupCyclesByInstrumentAndDay", () => {
+  it("indexes runs by instrument then load_date (one run per instrument-day)", () => {
+    const grouped = groupCyclesByInstrumentAndDay([
+      baseRun({ run_id: 1, instrument_serial: "84047", load_date: "2026-07-20" }),
+      baseRun({ run_id: 2, instrument_serial: "84047", load_date: "2026-07-21" }),
+      baseRun({ run_id: 3, instrument_serial: "84093", load_date: "2026-07-20" }),
+    ]);
+    expect(grouped.get("84047")?.get("2026-07-20")?.run_id).toBe(1);
+    expect(grouped.get("84047")?.get("2026-07-21")?.run_id).toBe(2);
+    expect(grouped.get("84093")?.get("2026-07-20")?.run_id).toBe(3);
+    expect(grouped.get("84093")?.size).toBe(1);
+  });
+});
+
+describe("allStages", () => {
+  it("flattens stages across both plates in order", () => {
+    const run = baseRun({
+      plates: [
+        basePlate([baseStage({ cell_use_id: 1 })]),
+        basePlate([baseStage({ cell_use_id: 2, slot_index: 4 })], { plate_id: 2, plate_index: 2 }),
+      ],
+    });
+    expect(allStages(run).map((s) => s.cell_use_id)).toEqual([1, 2]);
+  });
+});
+
+describe("padStages", () => {
+  it("returns eight nulls for an undefined run", () => {
+    expect(padStages(undefined)).toEqual(Array(8).fill(null));
+  });
+
+  it("places each stage at its slot_index, leaving the rest null", () => {
+    const run = baseRun({}, [
+      baseStage({ slot_index: 0, cell_use_id: 1 }),
+      baseStage({ slot_index: 5, cell_use_id: 2 }),
+    ]);
+    const padded = padStages(run);
+    expect(padded).toHaveLength(8);
+    expect(padded[0]?.cell_use_id).toBe(1);
+    expect(padded[5]?.cell_use_id).toBe(2);
+    expect(padded.filter((s) => s !== null)).toHaveLength(2);
+  });
+});
+
+describe("resolveCell", () => {
+  it("returns the run for a day that has one, no continuation, and closed", () => {
+    const run = baseRun({}, [baseStage({ cell_use_status: "planned" })]);
+    const res = resolveCell(new Map<string, RunOut>([["2026-07-20", run]]), "2026-07-20");
+    expect(res.run?.run_id).toBe(1);
+    expect(res.continuation).toBeUndefined();
+    expect(res.open).toBe(false);
+  });
+
+  it("is open for an empty day with no continuation", () => {
+    const res = resolveCell(new Map<string, RunOut>(), "2026-07-20");
+    expect(res.run).toBeUndefined();
+    expect(res.open).toBe(true);
+  });
+
+  it("is closed for an empty day a prior run's lock still spans", () => {
+    const earlier = baseRun({ run_id: 9, load_date: "2026-07-20", lock_until: "2026-07-22T06:00:00Z" });
+    const res = resolveCell(new Map<string, RunOut>([["2026-07-20", earlier]]), "2026-07-21");
+    expect(res.run).toBeUndefined();
+    expect(res.continuation?.run.run_id).toBe(9);
+    expect(res.open).toBe(false);
   });
 });
