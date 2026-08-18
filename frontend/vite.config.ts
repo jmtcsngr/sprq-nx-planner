@@ -21,6 +21,15 @@ function commitDate() {
 // docker-compose dev override, and in prod behind nginx.
 export default defineConfig({
   plugins: [react()],
+  // Vitest: coverage reporting only (no threshold). `include` reports untested
+  // src files at 0% too, so gaps are visible. Run via `npm run coverage`.
+  test: {
+    coverage: {
+      provider: "v8",
+      include: ["src/**"],
+      reporter: ["text", "text-summary"],
+    },
+  },
   // Surfaced in the navbar (see AppShell). Bump package.json "version" (semver
   // vX.X.X) with each change so the deployed build is identifiable at a glance.
   define: {

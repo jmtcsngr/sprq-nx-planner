@@ -17,6 +17,7 @@ dependencies = [
 dev = [
   "pytest>=8.3",
   "httpx2>=2.12",
+  "pytest-cov>=5",
 ]
 
 [tool.pytest.ini_options]
