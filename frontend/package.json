@@ -9,7 +9,8 @@
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -29,6 +30,7 @@
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
     "@vitejs/plugin-react": "^4.3.2",
+    "@vitest/coverage-v8": "^2.1.2",
     "eslint": "^9.12.0",
     "eslint-plugin-jsx-a11y": "^6.10.0",
     "eslint-plugin-react-hooks": "^5.0.0",

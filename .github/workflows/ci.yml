@@ -20,7 +20,7 @@ jobs:
       - run: pip install -e ".[dev]"
       # Integration tests use in-memory SQLite (see tests/integration/conftest.py),
       # so no Postgres service is needed.
-      - run: pytest
+      - run: pytest --cov=app --cov-report=term-missing
 
   frontend:
     runs-on: ubuntu-latest
@@ -41,4 +41,4 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
-      - run: npm run test
+      - run: npm run coverage
