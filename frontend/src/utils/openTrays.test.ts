@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { CellOut } from "@/types/cell";
+import { CELL_LIFETIME_H } from "@/utils/windowFade";
 
-import { countOpenTrays, groupOpenTrayIdsByInstrument } from "./openTrays";
+import { countOpenTrays, groupOpenTrayIdsByInstrument, soonestTrayExpiry, windowHoursRemaining } from "./openTrays";
 
 function baseCell(overrides: Partial<CellOut> = {}): CellOut {
   return {
@@ -86,5 +87,41 @@ describe("countOpenTrays", () => {
 
   it("returns 0 for an empty map", () => {
     expect(countOpenTrays(new Map())).toBe(0);
+  });
+});
+
+describe("windowHoursRemaining", () => {
+  it("returns hours left against the 108h window for an open, in-window cell", () => {
+    expect(windowHoursRemaining(baseCell({ status: "open", window_hours_elapsed: 20 }))).toBe(CELL_LIFETIME_H - 20);
+  });
+
+  it("is null when the window hasn't started (window_hours_elapsed null)", () => {
+    expect(windowHoursRemaining(baseCell({ status: "open", window_hours_elapsed: null }))).toBeNull();
+  });
+
+  it("is null for a non-open cell even if elapsed is set", () => {
+    expect(windowHoursRemaining(baseCell({ status: "exhausted", window_hours_elapsed: 5 }))).toBeNull();
+  });
+});
+
+describe("soonestTrayExpiry", () => {
+  it("returns the smallest remaining window across the tray's cells (most elapsed)", () => {
+    const cells = [
+      baseCell({ id: 1, status: "open", window_hours_elapsed: 10 }),
+      baseCell({ id: 2, status: "open", window_hours_elapsed: 40 }),
+    ];
+    expect(soonestTrayExpiry(cells)).toBe(CELL_LIFETIME_H - 40);
+  });
+
+  it("skips cells with no active window", () => {
+    const cells = [
+      baseCell({ id: 1, status: "open", window_hours_elapsed: null }),
+      baseCell({ id: 2, status: "open", window_hours_elapsed: 30 }),
+    ];
+    expect(soonestTrayExpiry(cells)).toBe(CELL_LIFETIME_H - 30);
+  });
+
+  it("is null when no cell has an active window", () => {
+    expect(soonestTrayExpiry([baseCell({ status: "exhausted", window_hours_elapsed: 5 })])).toBeNull();
   });
 });
